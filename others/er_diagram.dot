@@ -1,0 +1,15 @@
+digraph ER_Diagram {
+    node [shape=rectangle, style=filled, fillcolor=lightyellow];
+    
+    vendors [label="VENDORS\nvendor_id, name, rating, location"];
+    products [label="PRODUCTS\nproduct_id, name, price, tags, vendor_id"];
+    customers [label="CUSTOMERS\ncustomer_id, phone, shipping_address"];
+    orders [label="ORDERS\norder_id, customer_id, status, created_at"];
+    order_items [label="ORDER_ITEMS\norder_id, product_id, quantity"];
+    order_logs [label="ORDER_LOGS\nlog_id, order_id, action, details, log_time"];
+    
+    vendors -> products [label="1:N\nvendor_id"];
+    customers -> orders [label="1:N\ncustomer_id"];
+    orders -> order_items [label="1:N\norder_id"];
+    orders -> order_logs [label="1:N\norder_id"];
+}
