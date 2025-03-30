@@ -21,7 +21,7 @@
 pip install PyMySQL==0.9.3
 
 # 初始化数据库
-mysql -u root -p < groupX_insert_sql.txt
+mysql -u root -p -P 3307 < groupX_insert_sql.txt
 
 # 启动系统
 python main.py

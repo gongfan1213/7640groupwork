@@ -1,80 +1,57 @@
-START TRANSACTION;
 
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS retail_platform
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+-- Group X SQL Initialization Script
 
-USE retail_platform;
+CREATE DATABASE IF NOT EXISTS ecommerce;
+USE ecommerce;
 
--- 供应商表
+-- Vendors Table
 CREATE TABLE vendors (
-    vendor_id CHAR(36) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    rating DECIMAL(2,1) CHECK (rating BETWEEN 1.0 AND 5.0),
-    location VARCHAR(50) NOT NULL,
-    INDEX idx_vendor_location (location)
-) ENGINE=InnoDB;
+    vendor_id VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    rating DECIMAL(3,2) CHECK (rating BETWEEN 0 AND 5),
+    location VARCHAR(50)
+);
 
--- 产品表
+-- Products Table
 CREATE TABLE products (
-    product_id CHAR(36) PRIMARY KEY,
-    vendor_id CHAR(36) NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    product_id VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
     price DECIMAL(10,2) CHECK (price > 0),
     tags VARCHAR(255),
-    stock INT DEFAULT 0 CHECK (stock >= 0),
+    vendor_id VARCHAR(20),
     FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id)
-) ENGINE=InnoDB;
+);
 
--- 客户表
+-- Customers Table
 CREATE TABLE customers (
-    customer_id CHAR(36) PRIMARY KEY,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    address VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+    customer_id VARCHAR(20) PRIMARY KEY,
+    phone VARCHAR(20) NOT NULL,
+    shipping_address TEXT
+);
 
--- 订单表
+-- Orders Table
 CREATE TABLE orders (
-    order_id CHAR(36) PRIMARY KEY,
-    customer_id CHAR(36) NOT NULL,
-    order_date DATETIME NOT NULL,
-    total_amount DECIMAL(12,2) CHECK (total_amount > 0),
-    status ENUM('pending', 'shipped', 'cancelled') DEFAULT 'pending',
+    order_id VARCHAR(20) PRIMARY KEY,
+    customer_id VARCHAR(20),
+    status ENUM('pending', 'shipped', 'cancelled'),
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
-) ENGINE=InnoDB;
+);
 
--- 订单明细表
+-- Order Items Table
 CREATE TABLE order_items (
-    order_item_id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id CHAR(36) NOT NULL,
-    product_id CHAR(36) NOT NULL,
+    order_id VARCHAR(20),
+    product_id VARCHAR(20),
     quantity INT CHECK (quantity > 0),
-    price DECIMAL(10,2) CHECK (price > 0),
+    PRIMARY KEY (order_id, product_id),
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
-) ENGINE=InnoDB;
+);
 
--- 插入测试数据
-INSERT INTO vendors (vendor_id, name, rating, location) VALUES
-(UUID(), '优品电子', 4.5, '广东-深圳'),
-(UUID(), '时尚服饰', 4.8, '浙江-杭州'),
-(UUID(), '家居生活馆', 4.2, '上海-浦东');
+-- Sample Data
+INSERT INTO vendors VALUES
+('V001', 'Tech World', 4.5, 'Hong Kong'),
+('V002', 'Fashion Hub', 4.2, 'Shenzhen');
 
-INSERT INTO products (product_id, vendor_id, name, price, tags, stock) VALUES
-(UUID(), (SELECT vendor_id FROM vendors WHERE name='优品电子'), '无线蓝牙耳机', 299.00, '数码,蓝牙,降噪', 100),
-(UUID(), (SELECT vendor_id FROM vendors WHERE name='时尚服饰'), '男士休闲衬衫', 199.00, '服装,男装,纯棉', 50),
-(UUID(), (SELECT vendor_id FROM vendors WHERE name='家居生活馆'), '陶瓷餐具套装', 159.00, '家居,厨房,餐具', 30);
-
-INSERT INTO customers (customer_id, phone, address) VALUES
-(UUID(), '13800138000', '北京市朝阳区朝阳路1号'),
-(UUID(), '13912345678', '上海市浦东新区张江高科技园区');
-
--- 创建全文索引优化标签搜索
-ALTER TABLE products ADD FULLTEXT ft_product_tags (tags);
-
--- 创建订单日期索引
-CREATE INDEX idx_order_date ON orders(order_date);
-
-COMMIT;
+INSERT INTO products VALUES
+('P1001', 'Wireless Mouse', 59.99, 'electronics,computer', 'V001'),
+('P1002', 'Bluetooth Speaker', 199.99, 'audio,electronics', 'V001');

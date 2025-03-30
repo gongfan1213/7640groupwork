@@ -5,20 +5,28 @@ Handles product browsing and creation functions
 from db_conn import DBConnection
 from models import Product
 
-def browse_vendor_products(vendor_id):
-    """Display all products from specific vendor"""
+def browse_vendor_products(vendor_id, page=1, per_page=10):
+    """Display all products from specific vendor with pagination"""
     db = DBConnection()
     try:
         db.connect()
         with db.get_cursor() as cursor:
+            # Get total count
+            cursor.execute("SELECT COUNT(*) as total FROM products WHERE vendor_id = %s", (vendor_id,))
+            total = cursor.fetchone()['total']
+            total_pages = (total + per_page - 1) // per_page
+            
+            # Get paginated results
+            offset = (page - 1) * per_page
             cursor.execute("""
                 SELECT product_id, name, price, tags 
                 FROM products 
                 WHERE vendor_id = %s
-            """, (vendor_id,))
+                LIMIT %s OFFSET %s
+            """, (vendor_id, per_page, offset))
             
             products = cursor.fetchall()
-            print(f"\nProducts from Vendor {vendor_id}:")
+            print(f"\nProducts from Vendor {vendor_id} (Page {page}/{total_pages}):")
             print("{:<15} {:<30} {:<10} {:<30}".format(
                 'Product ID', 'Name', 'Price', 'Tags'))
             print("-" * 85)
@@ -28,6 +36,13 @@ def browse_vendor_products(vendor_id):
                     product['name'],
                     product['price'],
                     product['tags']))
+            
+            if total_pages > 1:
+                print(f"\nPage {page} of {total_pages} (Total products: {total})")
+                if page < total_pages:
+                    print("Enter 'n' for next page")
+                if page > 1:
+                    print("Enter 'p' for previous page")
     except Exception as e:
         print(f"Error fetching products: {e}")
     finally:
@@ -48,6 +63,15 @@ def add_new_product(vendor_id):
 # 测试代码
 if __name__ == "__main__":
     vid = input("Enter Vendor ID: ").strip()
-    browse_vendor_products(vid)
-    add_new_product(vid)
-    browse_vendor_products(vid)
+    page = 1
+    while True:
+        browse_vendor_products(vid, page)
+        cmd = input("\nEnter command (a: add product, n: next page, p: prev page, q: quit): ").strip().lower()
+        if cmd == 'a':
+            add_new_product(vid)
+        elif cmd == 'n':
+            page += 1
+        elif cmd == 'p' and page > 1:
+            page -= 1
+        elif cmd == 'q':
+            break

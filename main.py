@@ -52,7 +52,80 @@ def vendor_management_menu():
         else:
             print("Invalid choice")
 
-# 类似实现其他子菜单函数
+def product_catalog_menu():
+    """Handle product catalog operations"""
+    while True:
+        print("\n=== Product Catalog ===")
+        print("1. Browse Vendor Products")
+        print("2. Add New Product")
+        print("3. Return to Main Menu")
+        
+        choice = input("Enter choice: ").strip()
+        
+        if choice == '1':
+            vendor_id = input("Enter Vendor ID: ").strip()
+            browse_vendor_products(vendor_id)
+        elif choice == '2':
+            vendor_id = input("Enter Vendor ID: ").strip()
+            add_new_product(vendor_id)
+        elif choice == '3':
+            break
+        else:
+            print("Invalid choice")
+
+def search_menu():
+    """Handle product search operations"""
+    while True:
+        print("\n=== Product Search ===")
+        print("1. Search by Tags")
+        print("2. Return to Main Menu")
+        
+        choice = input("Enter choice: ").strip()
+        
+        if choice == '1':
+            tags = input("Enter search tags (comma-separated): ").strip()
+            search_by_tags(tags)
+        elif choice == '2':
+            break
+        else:
+            print("Invalid choice")
+
+def order_management_menu():
+    """Handle order management operations"""
+    order_system = OrderSystem()
+    
+    while True:
+        print("\n=== Order Management ===")
+        print("1. Create New Order")
+        print("2. Add Item to Order")
+        print("3. Remove Item from Order")
+        print("4. Cancel Order")
+        print("5. Submit Order")
+        print("6. Display All Orders")
+        print("7. Return to Main Menu")
+        
+        choice = input("Enter choice: ").strip()
+        
+        if choice == '1':
+            customer_id = input("Enter Customer ID: ").strip()
+            order_system.create_order(customer_id)
+        elif choice == '2':
+            product_id = input("Enter Product ID: ").strip()
+            quantity = int(input("Enter Quantity: "))
+            order_system.add_item(product_id, quantity)
+        elif choice == '3':
+            product_id = input("Enter Product ID to remove: ").strip()
+            order_system.remove_item(product_id)
+        elif choice == '4':
+            order_system.cancel_order()
+        elif choice == '5':
+            order_system.submit_order()
+        elif choice == '6':
+            order_system.display_orders()
+        elif choice == '7':
+            break
+        else:
+            print("Invalid choice")
 
 def generate_sql_script():
     """Generate SQL initialization script"""
