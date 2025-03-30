@@ -10,16 +10,64 @@ class OrderSystem:
     def __init__(self):
         self.current_order = None
 
-    def create_order(self, customer_id):
-        """Initialize new order with unique ID"""
-        order_id = input("Enter Order ID: ").strip()
-        self.current_order = Order(order_id, customer_id)
-        print(f"New order {order_id} created")
+    def select_order(self):
+        """Select existing order from database"""
+        db = DBConnection()
+        try:
+            db.connect()
+            with db.get_cursor() as cursor:
+                cursor.execute("SELECT order_id, customer_id, status FROM orders WHERE status = 'pending'")
+                orders = cursor.fetchall()
+                if not orders:
+                    print("No pending orders available")
+                    return False
+                    
+                print("\nAvailable Orders:")
+                for idx, order in enumerate(orders, 1):
+                    print(f"{idx}. Order ID: {order['order_id']}, Customer: {order['customer_id']}")
+                
+                choice = input("\nSelect order number (or 0 to create new): ").strip()
+                if choice == '0':
+                    customer_id = input("Enter Customer ID: ").strip()
+                    import uuid
+                    while True:
+                        order_id = str(uuid.uuid4())  # Generate full UUID as order ID
+                        cursor.execute("SELECT 1 FROM orders WHERE order_id = %s", (order_id,))
+                        if not cursor.fetchone():  # Check if ID exists
+                            break
+                    self.current_order = Order(order_id, customer_id)
+                    print(f"New order {order_id} created")
+                    return True
+                
+                try:
+                    choice_idx = int(choice) - 1
+                    if 0 <= choice_idx < len(orders):
+                        selected = orders[choice_idx]
+                        self.current_order = Order(selected['order_id'], selected['customer_id'])
+                        self.current_order.status = selected['status']
+                        
+                        # Load order items
+                        cursor.execute("SELECT product_id, quantity FROM order_items WHERE order_id = %s", 
+                                      (selected['order_id'],))
+                        self.current_order.items = [{'product_id': row['product_id'], 'quantity': row['quantity']} 
+                                                  for row in cursor.fetchall()]
+                        print(f"Selected order {selected['order_id']}")
+                        return True
+                except ValueError:
+                    pass
+                
+                print("Invalid selection")
+                return False
+        except Exception as e:
+            print(f"Error selecting order: {e}")
+            return False
+        finally:
+            db.close()
 
     def add_item(self, product_id, quantity):
         """Add product to current order"""
         if self.current_order is None:
-            print("Please create an order first! Use option 1 to create a new order.")
+            print("Please select or create an order first!")
             return
             
         if self.current_order.status != 'pending':
@@ -51,7 +99,7 @@ class OrderSystem:
     def remove_item(self, product_id):
         """Remove product from current order"""
         if self.current_order is None:
-            print("Please create an order first! Use option 1 to create a new order.")
+            print("Please select or create an order first!")
             return
 
         if self.current_order.status != 'pending':
@@ -78,10 +126,11 @@ class OrderSystem:
                                         if item['product_id'] != product_id]
                 
                 # 记录修改日志
-                cursor.execute(
-                    "INSERT INTO order_logs (order_id, action, details) VALUES (%s, %s, %s)",
-                    (self.current_order.order_id, 'remove_item', f'Removed product {product_id}')
-                )
+                # 临时注释掉order_logs表操作
+                # cursor.execute(
+                #     "INSERT INTO order_logs (order_id, action, details) VALUES (%s, %s, %s)",
+                #     (self.current_order.order_id, 'remove_item', f'Removed product {product_id}')
+                # )
                 db.commit()
                 print(f"Removed product {product_id} from order")
 
@@ -99,7 +148,7 @@ class OrderSystem:
             with db.get_cursor() as cursor:
                 # 显示所有待处理订单
                 cursor.execute(
-                    "SELECT order_id, customer_id, status, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at FROM orders WHERE status = 'pending'"
+                    "SELECT order_id, customer_id, status FROM orders WHERE status = 'pending'"
                 )
                 orders = cursor.fetchall()
                 if not orders:
@@ -109,7 +158,7 @@ class OrderSystem:
                 print("\nPending Orders List:")
                 print("Order ID\tCustomer ID\tCreation Time")
                 for order in orders:
-                    print(f"{order['order_id']}\t{order['customer_id']}\t{order['created_at']}")
+                    print(f"{order['order_id']}\t{order['customer_id']}")
                 
                 order_id = input("\nEnter order ID to cancel: ").strip()
                 
@@ -145,7 +194,7 @@ class OrderSystem:
     def submit_order(self):
         """Finalize order and save to database"""
         if self.current_order is None:
-            print("Please create an order first! Use option 1 to create a new order.")
+            print("Please select or create an order first!")
             return
 
         if not self.current_order.items:
@@ -160,32 +209,32 @@ class OrderSystem:
         try:
             db.connect()
             with db.get_cursor() as cursor:
-                # 验证库存并计算订单总额
+                # 计算订单总额
                 order_total = 0
                 for item in self.current_order.items:
                     cursor.execute(
-                        "SELECT price, stock FROM products WHERE product_id = %s",
+                        "SELECT price FROM products WHERE product_id = %s",
                         (item['product_id'],)
                     )
                     product = cursor.fetchone()
                     if not product:
                         print(f"Product {item['product_id']} not found")
                         return
-                    if product['stock'] < item['quantity']:
-                        print(f"Insufficient stock for product {item['product_id']}")
-                        return
                     order_total += product['price'] * item['quantity']
 
-                # Save order header
+                # 更新订单状态
                 cursor.execute(
-                    "INSERT INTO orders (order_id, customer_id, status, total_amount) VALUES (%s, %s, %s, %s)",
-                    (self.current_order.order_id, 
-                     self.current_order.customer_id,
-                     'pending',
-                     order_total)
+                    "UPDATE orders SET status = 'shipped' WHERE order_id = %s",
+                    (self.current_order.order_id,)
                 )
 
-                # Save order items and update stock
+                # 删除已有的订单项
+                cursor.execute(
+                    "DELETE FROM order_items WHERE order_id = %s",
+                    (self.current_order.order_id,)
+                )
+
+                # 保存订单项
                 for item in self.current_order.items:
                     cursor.execute(
                         """INSERT INTO order_items 
@@ -195,19 +244,14 @@ class OrderSystem:
                          item['product_id'],
                          item['quantity'])
                     )
-                    # Update product stock
-                    cursor.execute(
-                        "UPDATE products SET stock = stock - %s WHERE product_id = %s",
-                        (item['quantity'], item['product_id'])
-                    )
 
                 db.commit()
-                self.current_order.status = 'submitted'
-                print(f"Order successfully submitted! Total amount: HK${order_total:.2f}")
+                self.current_order.status = 'shipped'
+                print(f"订单提交成功！总金额: HK${order_total:.2f}")
 
         except Exception as e:
-            print(f"Error submitting order: {e}")
-            db.conn.rollback()
+            print(f"订单提交失败: {str(e)}")
+            db.rollback()
         finally:
             db.close()
 

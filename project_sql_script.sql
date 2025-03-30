@@ -47,6 +47,16 @@ CREATE TABLE order_items (
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
+-- Order Logs Table
+CREATE TABLE order_logs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id VARCHAR(20),
+    action VARCHAR(50),
+    details TEXT,
+    log_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
 -- Sample Data
 INSERT INTO vendors VALUES
 ('V001', 'Tech World', 4.5, 'Hong Kong'),
@@ -58,7 +68,11 @@ INSERT INTO vendors VALUES
 ('V007', 'Book Haven', 4.1, 'Wuhan'),
 ('V008', 'Baby Care Plus', 4.7, 'Nanjing'),
 ('V009', 'Auto Parts Pro', 4.0, 'Tianjin'),
-('V010', 'Kitchen Master', 4.5, 'Hangzhou');
+('V010', 'Kitchen Master', 4.5, 'Hangzhou'),
+('V011', 'Smart Home', 4.6, 'Suzhou'),
+('V012', 'Outdoor Gear', 4.3, 'Xiamen'),
+('V013', 'Pet Paradise', 4.7, 'Chongqing'),
+('V014', 'Health Plus', 4.4, 'Changsha');
 
 INSERT INTO products VALUES
 ('P1001', 'Wireless Mouse', 59.99, 'electronics,computer', 'V001'),
@@ -70,7 +84,11 @@ INSERT INTO products VALUES
 ('P1007', 'Yoga Mat', 45.99, 'sports,fitness', 'V006'),
 ('P1008', 'Baby Stroller', 299.99, 'baby,gear', 'V008'),
 ('P1009', 'Car Phone Holder', 25.99, 'auto,accessories', 'V009'),
-('P1010', 'Coffee Maker', 129.99, 'kitchen,appliances', 'V010');
+('P1010', 'Coffee Maker', 129.99, 'kitchen,appliances', 'V010'),
+('P1011', 'Smart Light', 89.99, 'electronics,smart', 'V011'),
+('P1012', 'Camping Tent', 299.99, 'outdoor,gear', 'V012'),
+('P1013', 'Pet Food', 39.99, 'pet,food', 'V013'),
+('P1014', 'Air Purifier', 499.99, 'health,appliances', 'V014');
 
 INSERT INTO customers VALUES
 ('C001', '13800138001', 'Beijing Chaoyang District'),
@@ -82,14 +100,23 @@ INSERT INTO customers VALUES
 ('C007', '13800138007', 'Wuhan Wuchang District'),
 ('C008', '13800138008', 'Nanjing Xianlin University Town'),
 ('C009', '13800138009', 'Tianjin Binhai New Area'),
-('C010', '13800138010', 'Xi\'an Hi-tech Industries Zone');
+('C010', '13800138010', 'Xi\'an Hi-tech Industries Zone'),
+('C011', '13800138011', 'Suzhou Industrial Park'),
+('C012', '13800138012', 'Xiamen Software Park'),
+('C013', '13800138013', 'Chongqing High-tech Zone'),
+('C014', '13800138014', 'Changsha Economic Zone');
 
-INSERT INTO orders VALUES
-('O001', 'C001', 'pending'),
-('O002', 'C002', 'shipped'),
-('O003', 'C003', 'pending'),
-('O004', 'C004', 'cancelled'),
-('O005', 'C005', 'shipped');
+INSERT INTO orders (order_id, customer_id, status, created_at) VALUES
+('O001', 'C001', 'pending', DEFAULT),
+('O002', 'C002', 'shipped', DEFAULT),
+('O003', 'C003', 'pending', DEFAULT),
+('O004', 'C004', 'cancelled', DEFAULT),
+('O005', 'C005', 'shipped', DEFAULT),
+('O006', 'C006', 'pending', DEFAULT),
+('O007', 'C007', 'shipped', DEFAULT),
+('O008', 'C008', 'cancelled', DEFAULT),
+('O009', 'C009', 'pending', DEFAULT),
+('O010', 'C010', 'shipped', DEFAULT);
 
 INSERT INTO order_items VALUES
 ('O001', 'P1001', 2),
@@ -97,4 +124,8 @@ INSERT INTO order_items VALUES
 ('O002', 'P1004', 1),
 ('O003', 'P1006', 1),
 ('O004', 'P1008', 1),
-('O005', 'P1010', 2);
+('O005', 'P1010', 2),
+('O006', 'P1011', 1),
+('O007', 'P1012', 1),
+('O008', 'P1013', 3),
+('O009', 'P1014', 1);

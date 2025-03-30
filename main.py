@@ -96,7 +96,7 @@ def order_management_menu():
     
     while True:
         print("\n=== Order Management ===")
-        print("1. Create New Order")
+        print("1. Select/Create Order")
         print("2. Add Item to Order")
         print("3. Remove Item from Order")
         print("4. Cancel Order")
@@ -107,25 +107,35 @@ def order_management_menu():
         choice = input("Enter choice: ").strip()
         
         if choice == '1':
-            customer_id = input("Enter Customer ID: ").strip()
-            order_system.create_order(customer_id)
-        elif choice == '2':
-            product_id = input("Enter Product ID: ").strip()
-            quantity = int(input("Enter Quantity: "))
-            order_system.add_item(product_id, quantity)
-        elif choice == '3':
-            product_id = input("Enter Product ID to remove: ").strip()
-            order_system.remove_item(product_id)
-        elif choice == '4':
-            order_system.cancel_order()
-        elif choice == '5':
-            order_system.submit_order()
+            if not order_system.select_order():
+                continue
+        elif choice in ['2', '3', '4', '5']:
+            if order_system.current_order is None:
+                print("请先选择或创建订单！")
+                continue
+            if choice == '2':
+                product_id = input("输入商品ID: ").strip()
+                quantity = int(input("输入数量: ").strip())
+                order_system.add_item(product_id, quantity)
+            elif choice == '3':
+                product_id = input("输入要移除的商品ID: ").strip()
+                order_system.remove_item(product_id)
+            elif choice == '4':
+                if order_system.current_order:
+                    order_system.cancel_order()
+                else:
+                    print("没有选中的订单！")
+            elif choice == '5':
+                if order_system.current_order:
+                    order_system.submit_order()
+                else:
+                    print("没有选中的订单！")
         elif choice == '6':
             order_system.display_orders()
         elif choice == '7':
             break
         else:
-            print("Invalid choice")
+            print("无效选择")
 
 def generate_sql_script():
     """Generate SQL initialization script"""
