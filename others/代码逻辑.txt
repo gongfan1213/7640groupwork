@@ -1,0 +1,42 @@
+
+E-R图工具·
+http://www.webgraphviz.com/
+
+1. 数据库模块
+- 创建`db_conn.py` 实现数据库连接池管理
+- `models.py` 定义供应商、产品、订单等数据模型
+2. 业务功能模块
+- 供应商管理(`vendor_mgmt.py` )：支持供应商列表展示与注册
+- 产品目录(`product_catalog.py` )：实现产品浏览与添加功能
+- 订单系统(`order_system.py` )：完整订单生命周期管理
+- 搜索系统(`search_engine.py` )：标签驱动的产品发现
+3. 系统集成
+- `main.py` 提供命令行菜单系统
+- 自动生成`groupX_insert_sql.txt` 数据库初始化脚本
+4. 文档完善
+- 更新README包含完整运行指南
+- 添加SQL脚本使用说明
+所有代码遵循Python 3.5语法规范，包含详细英文注释，模块间通过数据库连接池实现数据交互
+
+项目代码执行逻辑分为以下模块：1.供应商管理(vendor_mgmt)处理vendor_id/name/rating/location的CRUD；2.产品目录(product_catalog)管理product_id/name/price/tags与vendor_id的关联；3.订单系统(order_system)处理order_id/customer_id/status的创建/修改/提交，通过order_items关联product_id实现多供应商交易；4.数据库连接池(db_conn)管理MySQL连接；5.数据模型(models)定义Vendor/Product/Customer/Order类对应数据库表结构。所有操作通过PyMySQL执行SQL语句，保持事务一致性。
+
+项目代码执行逻辑详细描述如下：
+
+1. 供应商管理模块(vendor_mgmt)
+- `display_vendors()` ：执行`SELECT * FROM vendors` 查询，展示vendor_id（供应商ID）、name（企业名称）、rating（评分）、location（地理位置）
+- `add_new_vendor()` ：通过INSERT语句写入vendors表，使用Vendor模型的vendor_id/name/rating/location字段
+2. 产品目录模块(product_catalog)
+- `browse_vendor_products(vendor_id)` ：执行带分页的SELECT查询，显示product_id（产品ID）、name（产品名称）、price（价格）、tags（标签）
+- 产品创建时通过INSERT语句写入products表，强制限制tags字段最多3个标签
+3. 订单系统模块(order_system)
+- 订单创建生成UUID格式的order_id（订单ID），关联customer_id（客户ID）
+- 通过order_items表实现多供应商交易，记录product_id（产品ID）和quantity（数量）
+- 事务管理确保订单修改（status状态变更）与order_items表修改的原子性
+4. 数据库连接池(db_conn)
+- 使用PyMySQL建立连接池，配置参数：host=127.0.0.1、port=3307、user=root、password=root、db=ecommerce
+- 通过`get_cursor()` 方法获取游标，自动管理连接生命周期
+5. 数据模型(models)
+- Vendor类对应vendors表：vendor_id（主键）、name、rating、location
+- Product类对应products表：product_id（主键）、name、price、tags、vendor_id（外键）
+- Order类包含order_id（主键）、customer_id（外键）、status（状态），通过save_to_db()执行INSERT/UPDATE操作
+所有模块通过DBConnection类执行SQL语句，关键操作包含事务处理（BEGIN/COMMIT/ROLLBACK），确保数据一致性。订单状态机实现pending（待处理）-confirmed（已确认）-shipped（已发货）的状态流转
