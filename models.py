@@ -65,10 +65,12 @@ class Customer:
         self.phone = phone
         self.shipping_address = shipping_address
 
+# models.py
 class Order:
-    """Manages order lifecycle including modifications"""
-    def __init__(self, order_id, customer_id):
+    """订单对象，包含完整订单信息"""
+    def __init__(self, order_id, customer_id, status, created_at, items=None):
         self.order_id = order_id
         self.customer_id = customer_id
-        self.items = []
-        self.status = 'pending'
+        self.status = status
+        self.items = items if items is not None else []
+        self.created_at = created_at

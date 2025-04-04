@@ -43,8 +43,11 @@ class OrderSystem:
                     choice_idx = int(choice) - 1
                     if 0 <= choice_idx < len(orders):
                         selected = orders[choice_idx]
-                        self.current_order = Order(selected['order_id'], selected['customer_id'])
-                        self.current_order.status = selected['status']
+                        self.current_order = Order(
+                            order_id=selected['order_id'],
+                            customer_id=selected['customer_id'],
+                            status=selected['status']  # 通过构造函数设置状态
+                        )
                         
                         # Load order items
                         cursor.execute("SELECT product_id, quantity FROM order_items WHERE order_id = %s", 
@@ -319,10 +322,141 @@ class OrderSystem:
         finally:
             db.close()
 
+    def create_order(self):
+        """创建新订单并录入商品信息"""
+        customer_id = input("请输入客户ID: ").strip()
+        db = DBConnection()
+        try:
+            if not db.connect():
+                return False
+
+            with db.get_cursor() as cursor:
+                # 验证客户有效性
+                cursor.execute(
+                    "SELECT customer_id FROM customers WHERE customer_id = %s",
+                    (customer_id,)
+                )
+                db.commit()
+                if not cursor.fetchone():
+                    print(f"\033[31m错误：客户 {customer_id} 不存在\033[0m")
+                    return False
+
+
+                # 获取唯一订单ID
+                while True:
+                    order_id = input("请输入订单ID（20字符以内）: ").strip()
+                    if not order_id:
+                        print("\033[31m错误：订单ID不能为空\033[0m")
+                        continue
+                    if len(order_id) > 20:
+                        print("\033[31m错误：订单ID超过20字符限制\033[0m")
+                        continue
+
+                    cursor.execute("SELECT 1 FROM orders WHERE order_id = %s", (order_id,))
+                    if cursor.fetchone():
+                        print("\033[31m错误：该订单ID已存在\033[0m")
+                    else:
+                        break
+                    db.commit()
+                # 输入订单状态
+                valid_status = {'pending', 'shipped', 'cancelled'}
+                while True:
+                    status = input("请输入订单状态（pending/shipped/cancelled）: ").strip().lower()
+                    if status in valid_status:
+                        break
+                    print("\033[31m错误：无效状态，请重新输入\033[0m")
+
+                # 创建订单记录
+                cursor.execute(
+                    """INSERT INTO orders 
+                       (order_id, customer_id, status, created_at) 
+                       VALUES (%s, %s, %s, NOW())""",
+                    (order_id, customer_id, status)
+                )
+                db.commit()
+
+                # 录入商品信息
+                items = []
+                print("\n\033[33m开始录入商品（直接回车结束）\033[0m")
+                while True:
+                    product_id = input("\n输入Product_id: ").strip()
+                    if not product_id:
+                        print("\033[33m结束商品录入\033[0m")
+                        break
+
+                    # 验证商品有效性
+                    cursor.execute(
+                        "SELECT product_id, price FROM products WHERE product_id = %s",
+                        (product_id,)
+                    )
+                    db.commit()
+                    product = cursor.fetchone()
+                    if not product:
+                        print(f"\033[31m错误：商品 {product_id} 不存在\033[0m")
+                        continue
+
+                    # 输入购买数量
+                    while True:
+                        quantity = input("请输入购买数量: ").strip()
+                        try:
+                            quantity = int(quantity)
+                            if quantity <= 0:
+                                raise ValueError
+                            break
+                        except ValueError:
+                            print("\033[31m错误：请输入有效正整数\033[0m")
+
+                    # 添加订单商品
+                    cursor.execute(
+                        """INSERT INTO order_items 
+                           (order_id, product_id, quantity) 
+                           VALUES (%s, %s, %s)""",
+                        (order_id, product_id, quantity)
+                    )
+                    db.commit()
+                    items.append({
+                        'product_id': product_id,
+                        'quantity': quantity,
+                        'price': product['price']
+                    })
+                    print(f"\033[32m已添加 {product_id} x{quantity}\033[0m")
+
+                # 获取数据库生成的创建时间
+                cursor.execute(
+                    "SELECT created_at FROM orders WHERE order_id = %s",
+                    (order_id,)
+                )
+                created_at = cursor.fetchone()['created_at']
+                db.commit()
+
+                # 初始化订单对象
+                self.current_order = Order(
+                    order_id=order_id,
+                    customer_id=customer_id,
+                    status=status,
+                    created_at=created_at,
+                    items=items
+                )
+
+            db.commit()
+            print(f"\n\033[32m订单创建成功！\033[0m")
+            print(f"订单号：{order_id}")
+            print(f"创建时间：{self.current_order.created_at}")
+            return True
+
+        except Exception as e:
+            print(f"\033[31m订单创建失败: {str(e)}\033[0m")
+            db.rollback()
+            return False
+
+        finally:
+            db.close()
+
+
 # 测试代码
 if __name__ == "__main__":
     system = OrderSystem()
     system.display_orders()
-    system.create_order("CUST001")
+    system.create_order()
     system.add_item("P123", 2)
     system.submit_order()
