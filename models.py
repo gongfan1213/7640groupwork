@@ -57,7 +57,7 @@ class Product:
         finally:
             db.close()
 
-# 类似地实现Customer和Order类
+# Similarly implement Customer and Order classes
 class Customer:
     """Represents customer profile"""
     def __init__(self, customer_id, phone, shipping_address):
@@ -67,7 +67,7 @@ class Customer:
 
 # models.py
 class Order:
-    """订单对象，包含完整订单信息"""
+    """Order object, containing complete order information"""
     def __init__(self, order_id, customer_id, status, created_at, items=None):
         self.order_id = order_id
         self.customer_id = customer_id

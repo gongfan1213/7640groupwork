@@ -114,11 +114,11 @@ def order_management_menu():
                 print("请先选择或创建订单！")
                 continue
             if choice == '2':
-                product_id = input("输入商品ID: ").strip()
-                quantity = int(input("输入数量: ").strip())
+                product_id = input("Enter product ID: ").strip()
+                quantity = int(input("Enter quantity: ").strip())
                 order_system.add_item(product_id, quantity)
             elif choice == '3':
-                product_id = input("输入要移除的商品ID: ").strip()
+                product_id = input("Enter product ID to remove: ").strip()
                 order_system.remove_item(product_id)
             elif choice == '4':
                 if order_system.current_order:

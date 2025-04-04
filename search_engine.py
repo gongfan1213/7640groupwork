@@ -27,12 +27,12 @@ def search_by_tags(keyword, sort_order='asc'):
             
             results = cursor.fetchall()
             if not results:
-                print(f"\n未找到与 '{keyword}' 相关的产品")
+                print(f"\nNo products found related to '{keyword}'")
                 return
                 
-            print(f"\n搜索结果 - 关键词: '{keyword}' (按价格{'升序' if sort_order == 'asc' else '降序'})")
+            print(f"\nSearch results - Keyword: '{keyword}' (Sorted by price {'ascending' if sort_order == 'asc' else 'descending'})")
             print("{:<15} {:<30} {:<12} {:<25} {:<20}".format(
-                '产品ID', '产品名称', '价格(HKD)', '标签', '供应商'))
+                'Product ID', 'Product Name', 'Price(HKD)', 'Tags', 'Vendor'))
             print("-" * 102)
             for product in results:
                 print("{:<15} {:<30} ${:<11.2f} {:<25} {:<20}".format(
