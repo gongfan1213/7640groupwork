@@ -250,10 +250,10 @@ class OrderSystem:
 
                 db.commit()
                 self.current_order.status = 'shipped'
-                print(f"订单提交成功！总金额: HK${order_total:.2f}")
+                print("Order submission successful! Total amount: HK${:.2f}".format(order_total))
 
         except Exception as e:
-            print(f"订单提交失败: {str(e)}")
+            print("Error submitting order: {}".format(str(e)))
             db.rollback()
         finally:
             db.close()
@@ -288,20 +288,20 @@ class OrderSystem:
                 for order in orders:
                     if current_order_id != order['order_id']:
                         if current_order_id is not None:
-                            print(f"订单总金额: HK${order_total:.2f}\n")
+                            print(f"Total order amount: HK${order_total:.2f}\n")
                             print("-" * 80)
                         
                         current_order_id = order['order_id']
                         order_total = 0
                         
-                        print(f"\n订单ID: {order['order_id']}")
-                        print(f"客户ID: {order['customer_id']}")
-                        print(f"联系电话: {order['phone']}")
-                        print(f"配送地址: {order['shipping_address']}")
-                        print(f"订单状态: {order['status']}")
-                        print("\n商品明细:")
+                        print(f"\nOrder ID: {order['order_id']}")
+                        print(f"Customer ID: {order['customer_id']}")
+                        print(f"Contact Phone: {order['phone']}")
+                        print(f"Shipping Address: {order['shipping_address']}")
+                        print(f"Order Status: {order['status']}")
+                        print("\nProduct Details:")
                         print("{:<30} {:<10} {:<10} {:<10}".format(
-                            "商品名称", "单价", "数量", "小计"))
+                            "Product Name", "Unit Price", "Quantity", "Subtotal"))
                         print("-" * 60)
                     
                     if order['product_name']:
@@ -314,17 +314,17 @@ class OrderSystem:
                             line_total))
                 
                 if orders:
-                    print(f"订单总金额: HK${order_total:.2f}\n")
+                    print(f"Total order amount: HK${order_total:.2f}\n")
                     print("-" * 80)
                 
         except Exception as e:
-            print(f"查询订单时发生错误: {e}")
+            print(f"An error occurred while querying the order: {e}")
         finally:
             db.close()
 
     def create_order(self):
         """创建新订单并录入商品信息"""
-        customer_id = input("请输入客户ID: ").strip()
+        customer_id = input("Please enter customer ID: ").strip()
         db = DBConnection()
         try:
             if not db.connect():
@@ -338,33 +338,33 @@ class OrderSystem:
                 )
                 db.commit()
                 if not cursor.fetchone():
-                    print(f"\033[31m错误：客户 {customer_id} 不存在\033[0m")
+                    print(f"\033[31mError: Customer {customer_id} does not exist\033[0m")
                     return False
 
 
                 # 获取唯一订单ID
                 while True:
-                    order_id = input("请输入订单ID（20字符以内）: ").strip()
+                    order_id = input("Please enter order ID (max 20 characters): ").strip()
                     if not order_id:
-                        print("\033[31m错误：订单ID不能为空\033[0m")
+                        print("\033[31mError: Order ID cannot be empty\033[0m")
                         continue
                     if len(order_id) > 20:
-                        print("\033[31m错误：订单ID超过20字符限制\033[0m")
+                        print("\033[31mError: Order ID exceeds 20 character limit\033[0m")
                         continue
 
                     cursor.execute("SELECT 1 FROM orders WHERE order_id = %s", (order_id,))
                     if cursor.fetchone():
-                        print("\033[31m错误：该订单ID已存在\033[0m")
+                        print("\033[31mError: This order ID already exists\033[0m")
                     else:
                         break
                     db.commit()
                 # 输入订单状态
                 valid_status = {'pending', 'shipped', 'cancelled'}
                 while True:
-                    status = input("请输入订单状态（pending/shipped/cancelled）: ").strip().lower()
+                    status = input("Please enter order status (pending/shipped/cancelled): ").strip().lower()
                     if status in valid_status:
                         break
-                    print("\033[31m错误：无效状态，请重新输入\033[0m")
+                    print("\033[31mError: Invalid status, please re-enter\033[0m")
 
                 # 创建订单记录
                 cursor.execute(
@@ -377,11 +377,11 @@ class OrderSystem:
 
                 # 录入商品信息
                 items = []
-                print("\n\033[33m开始录入商品（直接回车结束）\033[0m")
+                print("\n\033[33mStart entering products (press Enter to finish)\033[0m")
                 while True:
-                    product_id = input("\n输入Product_id: ").strip()
+                    product_id = input("\nEnter Product ID: ").strip()
                     if not product_id:
-                        print("\033[33m结束商品录入\033[0m")
+                        print("\033[33mProduct entry finished\033[0m")
                         break
 
                     # 验证商品有效性
@@ -392,19 +392,19 @@ class OrderSystem:
                     db.commit()
                     product = cursor.fetchone()
                     if not product:
-                        print(f"\033[31m错误：商品 {product_id} 不存在\033[0m")
+                        print(f"\033[31mError: Product {product_id} does not exist\033[0m")
                         continue
 
                     # 输入购买数量
                     while True:
-                        quantity = input("请输入购买数量: ").strip()
+                        quantity = input("Please enter quantity: ").strip()
                         try:
                             quantity = int(quantity)
                             if quantity <= 0:
                                 raise ValueError
                             break
                         except ValueError:
-                            print("\033[31m错误：请输入有效正整数\033[0m")
+                            print("\033[31mError: Please enter a valid positive integer\033[0m")
 
                     # 添加订单商品
                     cursor.execute(
@@ -419,7 +419,7 @@ class OrderSystem:
                         'quantity': quantity,
                         'price': product['price']
                     })
-                    print(f"\033[32m已添加 {product_id} x{quantity}\033[0m")
+                    print(f"\033[32mAdded {product_id} x{quantity}\033[0m")
 
                 # 获取数据库生成的创建时间
                 cursor.execute(
@@ -439,13 +439,13 @@ class OrderSystem:
                 )
 
             db.commit()
-            print(f"\n\033[32m订单创建成功！\033[0m")
-            print(f"订单号：{order_id}")
-            print(f"创建时间：{self.current_order.created_at}")
+            print(f"\n\033[32mOrder created successfully!\033[0m")
+            print(f"Order ID: {order_id}")
+            print(f"Creation time: {self.current_order.created_at}")
             return True
 
         except Exception as e:
-            print(f"\033[31m订单创建失败: {str(e)}\033[0m")
+            print(f"\033[31mOrder creation failed: {str(e)}\033[0m")
             db.rollback()
             return False
 
