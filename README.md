@@ -1,5 +1,7 @@
 # COMP7640 数据库系统与管理 - 在线零售平台
 
+https://drive.google.com/drive/folders/1hLa7rFmfT_VIn37BiYQpeeEm5tL40GUi?usp=sharing
+
 ## 项目概述
 本系统实现了一个多供应商电商平台，包含供应商管理、产品目录、订单系统和智能搜索功能。系统采用Python 3.5开发，使用PyMySQL连接MySQL数据库，通过数据库连接池管理并发访问。
 
